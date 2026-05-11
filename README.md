@@ -144,3 +144,8 @@ uv run ruff check .
 ## 安全提醒
 
 请勿提交到公开仓库：`db.sqlite3`、代理账号密码、`sessionKey`、抓包数据、真实对话。不要在同一个代理组下堆很多同类型账号，建议分散到不同 IP 降低风控风险。
+
+## 神器推荐
+
+无限使用cursor：[https://cursor.refund.aizhp.site/about](https://cursor.refund.aizhp.site/about)
+
