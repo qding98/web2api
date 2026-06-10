@@ -2,7 +2,7 @@
 
 > English version: see [`README.en.md`](./README.en.md)
 
-Web2API 是一个**桥接服务**：把网页端的 AI 服务（当前主要是 Claude Web）包装成标准的 **OpenAI / Anthropic 兼容接口**，让你可以继续使用现有的 OpenAI SDK、Cursor 等客户端，而无需改动客户端代码或自己维护浏览器自动化脚本。
+Web2API 是一个**桥接服务**：把网页端的 AI 服务（当前已接入 Claude Web 与 Anything Web）包装成标准的 **OpenAI / Anthropic 兼容接口**，让你可以继续使用现有的 OpenAI SDK、Cursor 等客户端，而无需改动客户端代码或自己维护浏览器自动化脚本。
 
 ## 功能
 
@@ -67,7 +67,39 @@ xvfb-run -a -s "-screen 0 1920x1080x24" uv run python main.py
 uv run python main.py
 ```
 
-**配置账号**：访问 `http://127.0.0.1:9000/login`（若未配置 `auth.config_secret` 则配置页不开放），登录后到 `/config` 填入 fingerprint_id、账号 name、type=claude、auth.sessionKey，以及代理（如需要）。
+**配置账号**：访问 `http://127.0.0.1:9000/login`（若未配置 `auth.config_secret` 则配置页不开放），登录后到 `/config` 填入 fingerprint_id、账号 name、type、auth JSON，以及代理（如需要）。
+
+Claude 账号示例：`type=claude`，auth JSON 填：
+
+```json
+{"sessionKey":"你的 Claude sessionKey"}
+```
+
+Anything 账号示例：`type=anything`。当前 Anything 插件默认适配“已有项目继续对话”，至少需要 token 和项目组 ID：
+
+```json
+{
+  "authorization": "Bearer 你的 Anything access token",
+  "refresh_token": "可选的 refresh_token cookie",
+  "projectGroupId": "你的 Anything project group id",
+  "threadId": "可选的 thread id"
+}
+```
+
+如果你抓包发现 Anything 前端的 localStorage token key 或 GraphQL input 字段不同，可以在账号 auth JSON 中覆盖：
+
+```json
+{
+  "authorization": "Bearer 你的 Anything access token",
+  "authorizationStorageKey": "accessToken",
+  "projectGroupId": "你的 Anything project group id",
+  "generateInputTemplate": {
+    "projectGroupId": "{project_group_id}",
+    "threadId": "{thread_id}",
+    "content": "{message}"
+  }
+}
+```
 
 **发第一条请求：**
 
@@ -77,6 +109,17 @@ curl -s "http://127.0.0.1:9000/openai/claude/v1/chat/completions" \
   -H "Content-Type: application/json" \
   -d '{"model": "s4", "stream": false, "messages": [{"role":"user","content":"你好"}]}'
 ```
+
+Anything 请求示例：
+
+```bash
+curl -s "http://127.0.0.1:9000/openai/anything/v1/chat/completions" \
+  -H "Authorization: Bearer your-secret-key" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "anything", "stream": false, "messages": [{"role":"user","content":"继续完善这个 app 的登录页"}]}'
+```
+
+Anything 适配细节、token/projectGroupId 获取方式和部署边界见 [docs/anything-web-adapter.md](docs/anything-web-adapter.md)。
 
 ## 图片输入
 

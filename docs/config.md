@@ -30,14 +30,18 @@ server:
 
 ### 浏览器路径
 
-你至少要确认这一项是对的：
+本地运行时可以留空让程序按系统自动探测，也可以显式指定：
 
 ```yaml
 browser:
-  chromium_bin: '/Applications/Chromium.app/Contents/MacOS/Chromium'
+  chromium_bin: ''
 ```
 
+Windows 示例：`C:\Program Files\fingerprint-chromium\chrome.exe`
+
 Linux 示例：`/usr/bin/chromium` 或 `/opt/fingerprint-chromium/chrome`
+
+也可以用环境变量覆盖：`WEB2API_CHROMIUM_BIN=/path/to/chrome`
 
 ### Linux / Docker 兼容参数
 
@@ -94,3 +98,56 @@ auth:
 - 以后访问配置页面时，需要先打开 `/login`，输入这个明文 secret 登录
 - 如果要改 secret，直接把 `config_secret` 改成新的明文，再重启服务即可
 - 配置页登录默认按来源 IP 做简单限流：连续失败 5 次后锁定 600 秒，可通过 `auth.config_login_max_failures` 和 `auth.config_login_lock_seconds` 调整
+
+### Anything Web 配置
+
+Anything 插件通过真实浏览器页调用 `https://www.anything.com/api/graphql`。当前默认适配“已有项目继续对话”，因此需要知道 Anything 的 `projectGroupId`。
+
+全局兜底配置：
+
+```yaml
+anything:
+  start_url: ''
+  api_base: ''
+  graphql_path: '/graphql'
+  default_project_group_id: ''
+  default_thread_id: ''
+  poll_interval_seconds: 2
+  poll_timeout_seconds: 180
+  model_mapping:
+    anything: anything-web
+```
+
+推荐在配置页账号 auth JSON 中按账号填写：
+
+```json
+{
+  "authorization": "Bearer 你的 Anything access token",
+  "refresh_token": "可选的 refresh_token cookie",
+  "projectGroupId": "你的 Anything project group id",
+  "threadId": "可选的 thread id"
+}
+```
+
+如果 Anything 前端版本更新导致 GraphQL input 字段变动，可以用 `generateInputTemplate` 覆盖默认 input。模板支持 `{message}`、`{project_group_id}`、`{thread_id}`、`{timezone}`、`{session_id}` 等占位符：
+
+```json
+{
+  "authorization": "Bearer 你的 Anything access token",
+  "projectGroupId": "你的 Anything project group id",
+  "generateInputTemplate": {
+    "projectGroupId": "{project_group_id}",
+    "threadId": "{thread_id}",
+    "content": "{message}"
+  }
+}
+```
+
+请求路由：
+
+```bash
+POST /openai/anything/v1/chat/completions
+GET  /openai/anything/v1/models
+```
+
+完整接入说明见 [Anything Web 反代适配说明](anything-web-adapter.md)。

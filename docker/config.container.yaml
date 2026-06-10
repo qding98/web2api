@@ -83,6 +83,33 @@ claude:
   model_mapping:
     s4: claude-sonnet-4-5-20250929
 
+anything:
+  # Anything Web page entry URL. Leave empty to use https://www.anything.com
+  start_url: ''
+  # Anything API base URL. Leave empty to use https://www.anything.com/api
+  api_base: ''
+  # GraphQL path; usually no need to change
+  graphql_path: '/graphql'
+  # Existing-project chat mode fallback IDs. Per-account auth JSON can override these.
+  default_project_group_id: ''
+  default_thread_id: ''
+  # Candidate localStorage keys for Anything auth token.
+  authorization_storage_keys:
+    - authorization
+    - access_token
+    - accessToken
+    - token
+  # Optional GraphQL input override. Supports {message}, {project_group_id}, {thread_id}, {timezone}, {session_id}
+  generate_input_template: {}
+  request_timeout_seconds: 30
+  poll_interval_seconds: 2
+  poll_timeout_seconds: 180
+  rate_limit_fallback_cooldown_seconds: 60
+  yield_empty_on_accepted: true
+  clear_existing_cookies: false
+  model_mapping:
+    anything: anything-web
+
 mock:
   # Port for the mock server
   port: 8002

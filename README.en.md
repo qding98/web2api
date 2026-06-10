@@ -4,10 +4,14 @@ Wrap existing **web‑based AI services** into **OpenAI / Anthropic compatible H
 
 If you already have a proxy and site login state (for example Claude `sessionKey`) and want `OpenAI SDK`, `Cursor`, or any `/v1/chat/completions`‑compatible client to talk to the web AI service, this project is for you.
 
-Currently it ships with a built‑in `claude` plugin, exposing Claude Web as:
+Currently it ships with built‑in `claude` and `anything` plugins. Claude Web is exposed as:
 
 - OpenAI style: `POST /openai/claude/v1/chat/completions`, `GET /openai/claude/v1/models`
 - Anthropic style: `POST /anthropic/claude/v1/messages`
+
+Anything Web is exposed as:
+
+- OpenAI style: `POST /openai/anything/v1/chat/completions`, `GET /openai/anything/v1/models`
 
 Legacy routes are also supported: `POST /claude/v1/chat/completions`, `GET /claude/v1/models` (route format: `/{protocol}/{provider}/v1/...`).
 
@@ -30,7 +34,7 @@ Legacy routes are also supported: `POST /claude/v1/chat/completions`, `GET /clau
 2. Keep the web session alive.
 3. Expose an OpenAI‑style HTTP API to the outside.
 
-Internal flow: `proxy group -> browser -> Claude tab -> web session`.
+Internal flow: `proxy group -> browser -> provider tab -> web session`.
 
 ## Who is this for
 
@@ -43,8 +47,8 @@ If you only want to “try Claude’s web UI”, this project is **not** for you
 ## Key concepts
 
 - **Proxy group**: a group of proxy configs, mapped to one browser process.
-- **type**: a site capability type, currently default is `claude`.
-- **Account**: login state for a given type (for Claude it is `sessionKey`‑based).
+- **type**: a site capability type, for example `claude` or `anything`.
+- **Account**: login state for a given type (Claude is `sessionKey`‑based; Anything uses browser cookies/tokens plus a `projectGroupId`).
 - **Session**: a chat context; the project reuses it whenever possible and recreates it (replaying history) when needed after restart.
 
 ## Preparing proxies and accounts
@@ -97,7 +101,24 @@ xvfb-run -a -s "-screen 0 1920x1080x24" uv run python main.py
 uv run python main.py
 ```
 
-**Configure accounts**: open `http://127.0.0.1:9000/login` (config page is closed if `auth.config_secret` is not set). After login, go to `/config` and fill in `fingerprint_id`, account `name`, `type=claude`, `auth.sessionKey`, and proxy (if needed).
+**Configure accounts**: open `http://127.0.0.1:9000/login` (config page is closed if `auth.config_secret` is not set). After login, go to `/config` and fill in `fingerprint_id`, account `name`, `type`, auth JSON, and proxy (if needed).
+
+Claude auth example (`type=claude`):
+
+```json
+{"sessionKey":"your Claude sessionKey"}
+```
+
+Anything auth example (`type=anything`). The current plugin targets continued chat in an existing Anything project:
+
+```json
+{
+  "authorization": "Bearer your Anything access token",
+  "refresh_token": "optional refresh_token cookie",
+  "projectGroupId": "your Anything project group id",
+  "threadId": "optional thread id"
+}
+```
 
 **Send your first request:**
 
@@ -106,6 +127,15 @@ curl -s "http://127.0.0.1:9000/openai/claude/v1/chat/completions" \
   -H "Authorization: Bearer your-secret-key" \
   -H "Content-Type: application/json" \
   -d '{"model": "s4", "stream": false, "messages": [{"role":"user","content":"Hello"}]}'
+```
+
+Anything request example:
+
+```bash
+curl -s "http://127.0.0.1:9000/openai/anything/v1/chat/completions" \
+  -H "Authorization: Bearer your-secret-key" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "anything", "stream": false, "messages": [{"role":"user","content":"Continue improving this app login screen"}]}'
 ```
 
 ## Image input

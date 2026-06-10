@@ -37,11 +37,13 @@ auth:
 browser:
   # 指纹浏览器（fingerprint-chromium）可执行文件路径
   # Path to the fingerprint-chromium executable
-  # 留空则使用默认值：macOS /Applications/Chromium.app/Contents/MacOS/Chromium
-  # Leave empty to use the default: macOS /Applications/Chromium.app/Contents/MacOS/Chromium
+  # 留空则按系统自动探测；也可用 WEB2API_CHROMIUM_BIN 环境变量覆盖。
+  # Leave empty for OS auto-detection; WEB2API_CHROMIUM_BIN can override it.
+  # Windows 示例：C:\Program Files\fingerprint-chromium\chrome.exe
+  # Windows example: C:\Program Files\fingerprint-chromium\chrome.exe
   # Linux 示例：/usr/bin/chromium 或 /opt/fingerprint-chromium/chrome
   # Linux examples: /usr/bin/chromium or /opt/fingerprint-chromium/chrome
-  chromium_bin: '/Applications/Chromium.app/Contents/MacOS/Chromium'
+  chromium_bin: ''
 
   # 是否启用无头模式（headless）/ Whether to enable headless mode
   # 默认 false。优先推荐 Linux + Xvfb，这样仍然是"有界面浏览器"，兼容性更稳。
@@ -159,6 +161,60 @@ claude:
   # OpenAI-compatible model name -> actual model ID, used for /v1/models listing and model resolution on requests
   model_mapping:
     s4: claude-sonnet-4-5-20250929
+
+anything:
+  # Anything Web 页面入口，用于浏览器打开站点并维持真实网页登录态。
+  # Anything Web page entry URL used by the browser to keep real web-session state.
+  # 生产环境留空使用默认值：https://www.anything.com
+  start_url: ''
+
+  # Anything API 基础地址。生产环境留空使用默认值：https://www.anything.com/api
+  # Anything API base URL. Leave empty in production to use https://www.anything.com/api
+  api_base: ''
+
+  # GraphQL 路径，通常无需修改。
+  # GraphQL path; usually no need to change.
+  graphql_path: '/graphql'
+
+  # 当前适配优先支持“已有 Anything 项目继续对话”。
+  # 可在账号 auth JSON 中配置 projectGroupId/threadId；这里是全局兜底。
+  # Existing-project chat is the default supported mode.
+  # Per-account auth JSON may override projectGroupId/threadId; these are global fallbacks.
+  default_project_group_id: ''
+  default_thread_id: ''
+
+  # Anything 前端存储 token 的 localStorage key 候选。若你抓包发现 key 不同，可在账号 auth 里用 authorizationStorageKey 覆盖。
+  # Candidate localStorage keys for Anything auth token. Override per account with authorizationStorageKey if needed.
+  authorization_storage_keys:
+    - authorization
+    - access_token
+    - accessToken
+    - token
+
+  # 如果 Anything 前端 GraphQL input 字段变化，可在这里或账号 auth JSON 中配置 generateInputTemplate。
+  # 支持占位符：{message}、{project_group_id}、{projectGroupId}、{thread_id}、{threadId}、{timezone}、{session_id}
+  # If Anything changes GraphQL input fields, configure generateInputTemplate here or in account auth JSON.
+  generate_input_template: {}
+
+  # 请求与轮询超时。生成任务可能较慢，poll_timeout_seconds 可按 Anything 生成耗时调大。
+  # Request/polling timeouts. Increase poll_timeout_seconds for slower app generations.
+  request_timeout_seconds: 30
+  poll_interval_seconds: 2
+  poll_timeout_seconds: 180
+  rate_limit_fallback_cooldown_seconds: 60
+
+  # 生成任务接受后先输出一个空 chunk，避免长生成在首包阶段被调度器误判超时。
+  # Emit an empty chunk once accepted to avoid scheduler first-chunk timeout on long generations.
+  yield_empty_on_accepted: true
+
+  # 切号时是否清除 .anything.com cookies。默认 false，避免误删站点风控/挑战 cookie。
+  # Whether to clear .anything.com cookies when switching accounts. Default false preserves challenge cookies.
+  clear_existing_cookies: false
+
+  # OpenAI 兼容模型名 -> 实际模型 ID，用于 /v1/models 列表及请求时的模型解析。
+  # OpenAI-compatible model name -> actual model ID.
+  model_mapping:
+    anything: anything-web
 
 mock:
   port: 8002
